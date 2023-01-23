@@ -16,18 +16,42 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { Devs } from "@utils/constants";
 import definePlugin from "@utils/types";
 import { FluxDispatcher } from "@webpack/common";
 
-import { onChannelDelete, onGuildDelete, onRelationshipRemove } from "./functions";
+import { onChannelDelete, onGuildDelete, onRelationshipRemove, removeFriend, removeGroup, removeGuild } from "./functions";
 import settings from "./settings";
 import { syncGroups, syncGuilds } from "./utils";
 
 export default definePlugin({
-    name: "Relationship Notifier",
+    name: "RelationshipNotifier",
     description: "Notifies you when a friend, group chat, or server removes you.",
-    authors: [],
+    authors: [Devs.nick],
     settings,
+    patches: [
+        {
+            find: "removeRelationship:function(",
+            replacement: {
+                "match": /(removeRelationship:function\((\i),\i,\i\){)/,
+                "replace": "$1$self.removeFriend($2);"
+            }
+        },
+        {
+            find: "leaveGuild:function(",
+            replacement: {
+                "match": /(leaveGuild:function\((\i)\){)/,
+                "replace": "$1$self.removeGuild($2);"
+            }
+        },
+        {
+            find: "closePrivateChannel:function(",
+            replacement: {
+                "match": /(closePrivateChannel:function\((\i)\){)/,
+                "replace": "$1$self.removeGroup($2);"
+            }
+        }
+    ],
     start() {
         syncGuilds();
         syncGroups();
@@ -44,4 +68,7 @@ export default definePlugin({
         FluxDispatcher.unsubscribe("CHANNEL_DELETE", onChannelDelete);
         FluxDispatcher.unsubscribe("RELATIONSHIP_REMOVE", onRelationshipRemove);
     },
+    removeFriend,
+    removeGroup,
+    removeGuild
 });

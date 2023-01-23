@@ -26,39 +26,52 @@ import { getGroup, getGuild, notify } from "./utils";
 
 let manualRemovedFriend, manualRemovedGuild, manualRemovedGroup: string | undefined;
 
-export function onRelationshipRemove(event: RelationshipRemove) {
+export function removeFriend(id: string) { manualRemovedFriend = id; }
+export function removeGuild(id: string) { manualRemovedGuild = id; }
+export function removeGroup(id: string) { manualRemovedGroup = id; }
+
+export async function onRelationshipRemove(event: RelationshipRemove) {
     if (manualRemovedFriend === event.relationship.id) {
         return void (manualRemovedFriend = undefined);
     }
-    if (relationshipNotifier.settings.store.friends) {
-        UserUtils.fetchUser(event.relationship.id)
-            .then(user => {
-                notify(`${user.tag} has removed you as a friend.`, user.getAvatarURL(undefined, undefined, false));
-            })
-            .catch(() => {});
+    const user = await UserUtils.fetchUser(event.relationship.id).catch(() => undefined);
+    if (!user) return;
+    switch (event.relationship.type) {
+        case 1:
+            if (relationshipNotifier.settings.store.friends) {
+                notify(`${user.tag} removed you as a friend.`, user.getAvatarURL(undefined, undefined, false));
+            }
+            break;
+        case 3:
+            if (relationshipNotifier.settings.store.friendRequestCancels) {
+                notify(`A friend request from ${user.tag} has been removed.`, user.getAvatarURL(undefined, undefined, false));
+            }
+            break;
     }
 }
 
 export function onGuildDelete(event: GuildDelete) {
-    if (manualRemovedGuild === event.guild.id) {
-        return void (manualRemovedGuild = undefined);
-    }
     if (relationshipNotifier.settings.store.servers && event.guild.unavailable === undefined) {
+        if (manualRemovedGuild === event.guild.id) {
+            return void (manualRemovedGuild = undefined);
+        }
         const guild = getGuild(event.guild.id);
         if (guild) {
-            notify(`You were removed from the server ${guild.name}`, guild.iconURL);
+            removeGuild(event.guild.id);
+            notify(`You were removed from the server ${guild.name}.`, guild.iconURL);
         }
     }
 }
 
 export function onChannelDelete(event: ChannelDelete) {
-    if (manualRemovedGroup === event.channel.id) {
-        return void (manualRemovedGroup = undefined);
-    }
     if (relationshipNotifier.settings.store.groups && event.channel.type === 3) {
+        if (manualRemovedGroup === event.channel.id) {
+            return void (manualRemovedGroup = undefined);
+        }
         const channel = getGroup(event.channel.id);
         if (channel) {
-            notify(`You were removed from the group ${channel.name}`, channel.iconURL);
+            removeGroup(event.channel.id);
+            notify(`You were removed from the group ${channel.name}.`, channel.iconURL);
         }
     }
 }

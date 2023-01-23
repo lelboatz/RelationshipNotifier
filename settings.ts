@@ -30,6 +30,11 @@ const settings = definePluginSettings({
         description: "Notify when a friend removes you",
         default: true
     },
+    friendRequestCancels: {
+        type: OptionType.BOOLEAN,
+        description: "Notify when a friend request is cancelled",
+        default: true
+    },
     servers: {
         type: OptionType.BOOLEAN,
         description: "Notify when removed from a server",

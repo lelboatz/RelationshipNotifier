@@ -18,6 +18,7 @@
 
 import { Notices } from "@api/index";
 import { findByPropsLazy } from "@webpack";
+import { NavigationRouter } from "@webpack/common";
 import { Channel, Guild } from "discord-types/general";
 
 import relationshipNotifier from "./index";
@@ -26,22 +27,26 @@ import SimpleGuild from "./types/SimpleGuild";
 
 const DMStore = findByPropsLazy("getSortedPrivateChannels");
 const GuildStore = findByPropsLazy("getGuilds", "getGuild");
+const Notifications = findByPropsLazy("showNotification", "requestPermission");
 
 const guilds = new Map<string, SimpleGuild>();
 const groups = new Map<string, SimpleGroupChannel>();
 
 export function notify(text: string, icon?: string) {
     if (!document.hasFocus() && relationshipNotifier.settings.store.notifications) {
-        new Notification("Relationship Notifier", {
-            body: text,
-            icon: icon
-        });
+        Notifications.showNotification(icon, "Relationship Notifier", text, {
+            onClick: () => NavigationRouter.transitionTo("/channels/@me")
+        }, {});
     }
     Notices.showNotice(text, "OK", () => Notices.popNotice());
 }
 
 export function getGuild(id: string) {
     return guilds.get(id);
+}
+
+export function deleteGuild(id: string) {
+    guilds.delete(id);
 }
 
 export function syncGuilds() {
@@ -57,6 +62,10 @@ export function syncGuilds() {
 
 export function getGroup(id: string) {
     return groups.get(id);
+}
+
+export function deleteGroup(id: string) {
+    groups.delete(id);
 }
 
 export function syncGroups() {
