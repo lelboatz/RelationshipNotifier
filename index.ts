@@ -20,9 +20,10 @@ import { Devs } from "@utils/constants";
 import definePlugin from "@utils/types";
 import { FluxDispatcher } from "@webpack/common";
 
-import { onChannelDelete, onGuildDelete, onRelationshipRemove, removeFriend, removeGroup, removeGuild } from "./functions";
+import events from "./events";
+import { removeFriend, removeGroup, removeGuild } from "./functions";
 import settings from "./settings";
-import { syncGroups, syncGuilds } from "./utils";
+import { syncAndRunChecks } from "./utils";
 
 export default definePlugin({
     name: "RelationshipNotifier",
@@ -52,21 +53,12 @@ export default definePlugin({
             }
         }
     ],
-    start() {
-        syncGuilds();
-        syncGroups();
-        FluxDispatcher.subscribe("GUILD_CREATE", syncGuilds);
-        FluxDispatcher.subscribe("GUILD_DELETE", onGuildDelete);
-        FluxDispatcher.subscribe("CHANNEL_CREATE", syncGroups);
-        FluxDispatcher.subscribe("CHANNEL_DELETE", onChannelDelete);
-        FluxDispatcher.subscribe("RELATIONSHIP_REMOVE", onRelationshipRemove);
+    async start() {
+        await syncAndRunChecks();
+        events.forEach(e => e.callbacks.forEach(c => FluxDispatcher.subscribe(e.name, c)));
     },
     stop() {
-        FluxDispatcher.unsubscribe("GUILD_CREATE", syncGuilds);
-        FluxDispatcher.unsubscribe("GUILD_DELETE", onGuildDelete);
-        FluxDispatcher.unsubscribe("CHANNEL_CREATE", syncGroups);
-        FluxDispatcher.unsubscribe("CHANNEL_DELETE", onChannelDelete);
-        FluxDispatcher.unsubscribe("RELATIONSHIP_REMOVE", onRelationshipRemove);
+        events.forEach(e => e.callbacks.forEach(c => FluxDispatcher.unsubscribe(e.name, c)));
     },
     removeFriend,
     removeGroup,

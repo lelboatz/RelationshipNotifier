@@ -16,13 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-interface RelationshipRemove {
-    type: "RELATIONSHIP_REMOVE";
-    relationship: {
-        id: string;
-        nickname: string;
-        type: number;
-    }
+interface EventListener {
+    name: string;
+    callbacks: Function[];
 }
 
-export default RelationshipRemove;
+export default EventListener;
